@@ -1,0 +1,30 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ready"
+        android:textAlignment="center"
+        android:layout_marginBottom="30dp"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/btnSaveLog"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="1. Save Logcat to SD Card" />
+
+    <Button
+        android:id="@+id/btnAutoUpload"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="2. Trigger Active Upload" />
+
+</LinearLayout>
