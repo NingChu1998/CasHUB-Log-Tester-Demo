@@ -40,7 +40,7 @@ This scenario tests the app's ability to "push" a log upload notification to Cas
 ### Scenario C: Scheduled Active Upload (Automatic)
 This scenario verifies that the app can automatically push logs to CasHUB on a schedule, behaving exactly like Scenario B but triggered by the system.
 
-1. **Background Task:** The app uses `WorkManager` to automatically capture **full logs** and trigger an **Active Upload** every 24 hours.
+1. **Background Task:** The app uses `WorkManager` to automatically capture **full logs** and trigger an **Active Upload** every 24 hours. **Note:** The 24-hour cycle is calculated from the very first time the app is launched; restarting the app within the same day will not reset or delay this scheduled interval.
 2. **Instant Test:** For testing purposes, an upload is also triggered **immediately upon app restart**.
 3. **Automation:** The `LogWorker` saves the log file (overwriting with fresh data) and sends the `cashub.active.upload` broadcast automatically.
 4. **Verification:** Check the **Application Log** page in the CasHUB Portal to see the entries uploaded automatically by the background worker.
