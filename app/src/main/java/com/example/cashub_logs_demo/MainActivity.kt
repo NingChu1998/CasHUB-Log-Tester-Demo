@@ -5,18 +5,25 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.cashub_demo.R
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
-    // Folder and file names matching your requirements
-    private val logFolderPath = "/mnt/sdcard/cashub_demo"
+    // Use Environment.getExternalStorageDirectory() for better compatibility
+    private val logFolderPath = File(Environment.getExternalStorageDirectory(), "cashub_demo").absolutePath
     private val logFileName = "demo_logs.csv"
 
     private lateinit var tvStatus: TextView
@@ -59,6 +66,30 @@ class MainActivity : AppCompatActivity() {
         btnAutoUpload.setOnClickListener {
             triggerCasHubActiveUpload()
         }
+
+        // 3. Setup Background Worker for Scenario 3
+        setupBackgroundLogCapture()
+    }
+
+    private fun setupBackgroundLogCapture() {
+        val workManager = WorkManager.getInstance(this)
+
+        // A. Immediate capture for testing (on every App Restart)
+        val immediateRequest = OneTimeWorkRequestBuilder<LogWorker>()
+            .addTag("ImmediateLogCapture")
+            .build()
+        workManager.enqueueUniqueWork("TestLogCapture", ExistingWorkPolicy.REPLACE, immediateRequest)
+
+        // B. Standard 24-hour periodic capture
+        val logWorkRequest = PeriodicWorkRequestBuilder<LogWorker>(24, TimeUnit.HOURS)
+            .addTag("LogCaptureWork")
+            .build()
+
+        workManager.enqueueUniquePeriodicWork(
+            "DailyLogCapture",
+            ExistingPeriodicWorkPolicy.KEEP,
+            logWorkRequest
+        )
     }
 
     private fun saveLogcatToFile(): String? {
@@ -71,19 +102,16 @@ class MainActivity : AppCompatActivity() {
 
         return try {
             // 1. Write a test log entry to the system cache first
-            Log.d("TEST", "CasHUB_Demo: This is a manual test log message at ${System.currentTimeMillis()}")
+            Log.d("TEST", "CasHUB_Demo: Manual test log message at ${System.currentTimeMillis()}")
 
-            // 2. To ensure reliability, manually write a line of text to the file first
-            // This ensures the file is not empty even if the logcat command fails
+            // 2. Initialize file
             logFile.writeText("Type,Tag,Message\n")
             logFile.appendText("DEBUG,CasHUB_Manual_Test,File initialized successfully\n")
 
-            // 3. Execute logcat command and append the results to the file
-            // Note: Command does not use -f; it uses the input stream for manual writing
+            // 3. Execute logcat
             val command = "logcat -d -v csv"
             val process = Runtime.getRuntime().exec(command)
 
-            // Read command output and write to file
             process.inputStream.bufferedReader().use { reader ->
                 reader.forEachLine { line ->
                     logFile.appendText(line + "\n")
@@ -100,7 +128,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun triggerCasHubActiveUpload() {
-        val fullPath = "$logFolderPath/$logFileName"
+        val fullPath = File(logFolderPath, logFileName).absolutePath
         val file = File(fullPath)
 
         if (!file.exists()) {
@@ -108,21 +136,17 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Implementation of Broadcast Intent based on Document Section 8.3
         val intent = Intent("cashub.active.upload")
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        intent.putExtra("file_path", fullPath) //
-        intent.putExtra("package_name", packageName) //
-        sendBroadcast(intent) //
+        intent.putExtra("file_path", fullPath)
+        intent.putExtra("package_name", packageName)
+        sendBroadcast(intent)
 
         tvStatus.text = "Broadcast Sent!\nWaiting for CasHUB response..."
     }
 
-    // --- Inner Class: Receive CasHUB Upload Results ---
-
     override fun onResume() {
         super.onResume()
-        // Register Broadcast Receiver to listen for upload results
         val filter = IntentFilter("com.castlestech.cashub.agent.action.UPLOAD")
         activeUploadReceiver = ActiveUploadReceiver()
         registerReceiver(activeUploadReceiver, filter)
@@ -130,7 +154,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        // Unregister to save resources
         unregisterReceiver(activeUploadReceiver)
     }
 }

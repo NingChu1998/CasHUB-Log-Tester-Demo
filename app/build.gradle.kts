@@ -42,9 +42,8 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.activity:activity-ktx:1.8.2")  // Instead of 1.12.3
 
-    // If you are using Compose, use these versions:
-    // implementation("androidx.compose.ui:ui:1.6.0")
-    // implementation("androidx.compose.material3:material3:1.2.0")
+    // WorkManager for Scenario 3
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
